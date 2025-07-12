@@ -1,0 +1,35 @@
+.selectorForKey {
+  background-color: red;
+}
+
+.randomSelector {
+  font-size: 24px;
+}
+
+.buttonSelector {
+  color: azure;
+}
+
+.unusedSelectorRandom {
+  width: 34px;
+}
+
+.doubleUnused {
+  height: 100px;
+}
+
+.doubleUnused {
+  width: 100px;
+}
+
+.selectorAndButton > button {
+  text-decoration: underline;
+}
+
+.selectorAndButton > .nestedSelectorAndButton {
+  text-decoration: underline; /* TODO ^ selectors like this should be ignored */
+}
+
+.selectorForComponent {
+  display: flex;
+}
