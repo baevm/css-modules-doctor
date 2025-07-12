@@ -1,25 +1,50 @@
 {
-  "name": "unused-css-modules-selectors",
+  "name": "css-modules-doctor",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "description": "A CLI tool to find unused CSS modules selectors in a project.",
+  "author": "baev2m baev2m@gmail.com",
+  "main": "dist/main.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/baevm/css-modules-doctor"
   },
+  "scripts": {
+    "start": "ts-node ./src/main.ts",
+    "build": "tsc",
+    "lint": "eslint ./src",
+    "test": "vitest run ./tests",
+    "prepublishOnly": "npm run build"
+  },
+  "bin": {
+    "cssmdoc": "./dist/main.js"
+  },
+  "files": [
+    "dist"
+  ],
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "module",
   "devDependencies": {
     "@eslint/js": "^9.31.0",
     "@types/node": "^24.0.13",
     "eslint": "^9.31.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-alias": "^1.1.2",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-prettier": "^5.5.3",
     "globals": "^16.3.0",
     "prettier": "3.6.2",
-    "typescript-eslint": "^8.36.0"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.36.0",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
+    "cli-table3": "^0.6.5",
+    "commander": "^14.0.0",
     "fast-glob": "^3.3.3",
-    "lightningcss": "^1.30.1"
+    "lightningcss": "^1.30.1",
+    "oxc-parser": "^0.77.2",
+    "oxc-walker": "^0.3.0"
   }
 }

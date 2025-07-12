@@ -1,0 +1,8 @@
+.componentContainer {
+  display: flex;
+  align-items: center;
+}
+
+.unusedComponentContainer {
+  offset-distance: inherit;
+}

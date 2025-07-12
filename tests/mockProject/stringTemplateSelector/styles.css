@@ -1,0 +1,12 @@
+.firstClassName {
+  color: orange;
+}
+
+.superUniqueUsedClassname {
+  display: flex;
+  align-items: center;
+}
+
+.unusedRandomClassName {
+  offset-distance: inherit;
+}

@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
-     "noEmit": true,
+     "rootDir": ".",
      "target": "esnext",
      "module": "nodenext",
+     "moduleResolution": "nodenext",
      "rewriteRelativeImportExtensions": true,
-     "erasableSyntaxOnly": true,
-     "strict": true
+     "strict": true,
+     "outDir": "dist"
   },
-  "exclude": ["./test/**/*"]
 } 

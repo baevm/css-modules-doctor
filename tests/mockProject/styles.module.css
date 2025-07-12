@@ -4,6 +4,8 @@
 
 .randomSelector {
   font-size: 24px;
+
+  container-name: containerNameShouldBeIgnored;
 }
 
 .buttonSelector {
@@ -32,4 +34,29 @@
 
 .selectorForComponent {
   display: flex;
+}
+
+@container containerNameShouldBeIgnored (width > 700px) {
+  .card {
+    font-size: 2rem;
+  }
+}
+
+@media (width > 1200px) {
+  .cardTitle {
+    font-size: 64px;
+  }
+}
+
+.element {
+  animation-name: someKeyframeName;
+}
+
+@keyframes someKeyframeName {
+  from {
+    transform: translateX(0%);
+  }
+  to {
+    transform: translateX(100%);
+  }
 }

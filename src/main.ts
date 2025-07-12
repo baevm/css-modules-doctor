@@ -1,33 +1,51 @@
-import { transform } from 'lightningcss'
-import fs from 'node:fs/promises'
-import path from 'node:path'
-import fastglob from 'fast-glob'
+#! /usr/bin/env node
 
-async function parseCssFileSelectors(cssPath: string) {
-  const fileData = await fs.readFile(cssPath)
+import { parseProject } from './parsing.ts'
+import { Command } from 'commander'
+import type { Config } from './types.ts'
+import { formatUndefinedSelectors, formatUnusedSelectors, getAllUnusedSelectors } from './format.ts'
 
-  const { exports } = transform({
-    filename: cssPath,
-    code: fileData,
-    cssModules: true,
-    sourceMap: true,
+const program = new Command()
+
+program
+  .name('cssmdoc')
+  .description('Finds unused CSS modules selectors')
+  .argument('<dir>', 'path to project')
+  .option(
+    '-i, --ignore <paths...>',
+    'Comma-separated paths to ignore. Can be directories or specific CSS files.',
+  )
+  .option('--styleGlobs <globs...>', 'Glob patterns for CSS module files. Uses .css by default', [
+    '.css',
+  ])
+  .option('--exts <exts...>', 'Component file extensions. Uses [jsx|tsx] by default', [
+    'jsx',
+    'tsx',
+  ])
+  .option(
+    '-r, --reverse',
+    'Reverse mode - find selectors used in components but not existing in CSS file. Default: false',
+  )
+  .action(async (dir: string, options: Config) => {
+    await run(dir, options)
   })
 
-  return exports ? Object.keys(exports) : []
-}
+program.parse()
 
-async function parseProject(projectPath: string) {
-  const entries = await fastglob(projectPath + '/**/*.{jsx, tsx}')
+async function run(pathToProject: string, options: Config) {
+  const { selectorsUsage, undefinedSelectors } = await parseProject(pathToProject, options)
 
-  for (const entry of entries) {
-    console.log({ entry })
+  const unusedSelectors = getAllUnusedSelectors(selectorsUsage)
+
+  const { table, stats } = formatUnusedSelectors(pathToProject, unusedSelectors)
+
+  console.log(table.toString())
+
+  if (options.reverse) {
+    const { table, stats } = formatUndefinedSelectors(pathToProject, undefinedSelectors)
+    console.log(table.toString())
+    console.log(`Total undefined selectors: ${stats.totalUndefinedSelectors}`)
   }
+
+  console.log(`Total unused selectors: ${stats.totalUnusedSelectors}`)
 }
-
-async function main() {
-  const projectPath = path.join(import.meta.dirname, '../test')
-
-  parseProject(projectPath)
-}
-
-main()
