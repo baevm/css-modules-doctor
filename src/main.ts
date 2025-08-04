@@ -37,12 +37,12 @@ async function run(pathToProject: string, options: Config) {
 
   const unusedSelectors = getAllUnusedSelectors(selectorsUsage)
 
-  const { table, stats } = formatUnusedSelectors(pathToProject, unusedSelectors)
+  const { table, stats } = formatUnusedSelectors(unusedSelectors)
 
   console.log(table.toString())
 
   if (options.reverse) {
-    const { table, stats } = formatUndefinedSelectors(pathToProject, undefinedSelectors)
+    const { table, stats } = formatUndefinedSelectors(undefinedSelectors)
     console.log(table.toString())
     console.log(`Total undefined selectors: ${stats.totalUndefinedSelectors}`)
   }

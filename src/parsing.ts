@@ -50,13 +50,17 @@ export type ParseResult = {
   undefinedSelectors: Record<string, { cssFilePath: string; selectors: string[] }>
 }
 
-export async function parseProject(projectPath: string, options: Config): Promise<ParseResult> {
-  const componentFileExtensions = options.exts.length > 1 ? options.exts.join(',') : options.exts[0]
+function buildProjectPath(projectPath: string, exts: string[]) {
+  const componentFileExtensions = exts.length > 1 ? exts.join(',') : exts[0]
   const projectPathGlob =
     projectPath +
-    (options.exts.length > 1
-      ? `/**/*.{${componentFileExtensions}}`
-      : `/**/*.${componentFileExtensions}`)
+    (exts.length > 1 ? `/**/*.{${componentFileExtensions}}` : `/**/*.${componentFileExtensions}`)
+
+  return projectPathGlob
+}
+
+export async function parseProject(projectPath: string, options: Config): Promise<ParseResult> {
+  const projectPathGlob = buildProjectPath(projectPath, options.exts)
 
   const fileEntries = await fastglob(projectPathGlob, { ignore: options.ignore })
 

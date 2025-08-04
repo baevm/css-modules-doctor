@@ -25,10 +25,7 @@ type UnusedStats = {
   totalUnusedSelectors: number
 }
 
-export function formatUnusedSelectors(
-  pathToProject: string,
-  unusedSelectors: UnusedSelectors,
-): {
+export function formatUnusedSelectors(unusedSelectors: UnusedSelectors): {
   table: Table.Table
   stats: UnusedStats
 } {
@@ -54,15 +51,15 @@ type UndefinedStats = {
   totalUndefinedSelectors: number
 }
 
-export function formatUndefinedSelectors(
-  pathToProject: string,
-  undefinedSelectors: ParseResult['undefinedSelectors'],
-): { table: Table.Table; stats: UndefinedStats } {
+export function formatUndefinedSelectors(undefinedSelectors: ParseResult['undefinedSelectors']): {
+  table: Table.Table
+  stats: UndefinedStats
+} {
   const table = new Table({
     head: ['JSX file path', 'CSS file path', 'Undefined selectors'],
   })
 
-  const sortedDesc = Object.entries(undefinedSelectors).toSorted(
+  const sortedDesc = Object.entries(undefinedSelectors).sort(
     (a, b) => b[1].selectors.length - a[1].selectors.length,
   )
 
