@@ -1,16 +1,13 @@
 {
   "compilerOptions": {
-     "rootDir": "src",
      "target": "esnext",
      "module": "nodenext",
      "moduleResolution": "nodenext",
      "rewriteRelativeImportExtensions": true,
      "strict": true,
-     "outDir": "dist"
+     "outDir": "dist",
+     "noUncheckedIndexedAccess": true,
+     "declaration": true
   },
-  "exclude": [
-    "node_modules",
-    "dist",
-    "tests"
-  ]
+  "exclude": ["./tests/**/*", "dist"]
 } 

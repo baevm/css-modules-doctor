@@ -40,9 +40,13 @@ export type CssFileStats = {
 }
 
 export type JsxFileStats = {
-  selectors?: Record<string, number>
-  cssFilePath?: string
-  stylesIdentifier?: string // Identifier for styles, e.g. 'css' in this import: "import css from './styles.css'"
+  stats: {
+    // Identifier for styles, e.g. 'css' in this import: "import css from './styles.css'"
+    [stylesIdentifier: string]: {
+      selectors?: Record<string, number>
+      cssFilePath: string
+    }
+  }
 }
 
 export type ParseResult = {
@@ -57,6 +61,17 @@ function buildProjectPath(projectPath: string, exts: string[]) {
     (exts.length > 1 ? `/**/*.{${componentFileExtensions}}` : `/**/*.${componentFileExtensions}`)
 
   return projectPathGlob
+}
+
+function buildCssFileStatsSelectors(cssFilePath: string): CssFileStats['selectors'] {
+  const cssFileSelectors = parseCssFileSelectors(cssFilePath)
+  const selectorsCounter: CssFileStats['selectors'] = {}
+
+  cssFileSelectors.forEach(selector => {
+    selectorsCounter[selector] = 0
+  })
+
+  return selectorsCounter
 }
 
 export async function parseProject(projectPath: string, options: Config): Promise<ParseResult> {
@@ -75,9 +90,9 @@ export async function parseProject(projectPath: string, options: Config): Promis
       // parse CSS imports
       if (node.type === 'ImportDeclaration') {
         const importPath = node.source.value
-        const isRequiredCssFile = options.styleGlobs.some(glob => importPath.endsWith(glob))
+        const isCssFile = options.styleGlobs.some(glob => importPath.endsWith(glob))
 
-        if (isRequiredCssFile) {
+        if (isCssFile) {
           const fullPathToCssFile = path.join(path.dirname(fileEntry), node.source.value)
 
           // Skip CSS files from ignore array
@@ -85,52 +100,52 @@ export async function parseProject(projectPath: string, options: Config): Promis
             return
           }
 
-          const stylesImportIdentifier = node.specifiers.at(0)?.local.name
-
           if (cssFilesUsedByComponents[fullPathToCssFile]) {
             cssFilesUsedByComponents[fullPathToCssFile].usedBy.push(fileEntry)
           } else {
-            const cssFileSelectors = parseCssFileSelectors(fullPathToCssFile)
-            const selectorsCounter: Record<string, number> = {}
-
-            cssFileSelectors.forEach(selector => {
-              selectorsCounter[selector] = 0
-            })
+            const emptySelectorsCounter = buildCssFileStatsSelectors(fullPathToCssFile)
 
             cssFilesUsedByComponents[fullPathToCssFile] = {
-              selectors: selectorsCounter,
+              selectors: emptySelectorsCounter,
               usedBy: [fileEntry],
             }
           }
 
           if (!selectorsInJsx[fileEntry]) {
-            selectorsInJsx[fileEntry] = {}
+            selectorsInJsx[fileEntry] = { stats: {} }
           }
 
-          if (!selectorsInJsx[fileEntry].cssFilePath) {
-            selectorsInJsx[fileEntry].cssFilePath = fullPathToCssFile
-            selectorsInJsx[fileEntry].stylesIdentifier = stylesImportIdentifier
+          const stylesImportIdentifier = node.specifiers.at(0)?.local.name
+
+          // there is no import identifier for side effect imports, e.g. "import './path/cssFile.css'"
+          if (!stylesImportIdentifier) {
+            return
+          }
+
+          if (!selectorsInJsx[fileEntry].stats[stylesImportIdentifier]) {
+            selectorsInJsx[fileEntry].stats[stylesImportIdentifier] = {
+              selectors: {},
+              cssFilePath: fullPathToCssFile,
+            }
           }
         }
       }
 
       // Count selectors used in JSX
       if (isNodeReferencingStyles(node, selectorsInJsx[fileEntry])) {
+        const stylesIdentifier = node.object.name
         const cssSelector = node.property.name
 
-        if (!selectorsInJsx[fileEntry]) {
-          selectorsInJsx[fileEntry] = {}
-        }
+        const statsForIdentifier = selectorsInJsx[fileEntry]?.stats[stylesIdentifier]
 
-        if (!selectorsInJsx[fileEntry].selectors) {
-          selectorsInJsx[fileEntry].selectors = {}
-        }
+        if (statsForIdentifier) {
+          if (!statsForIdentifier.selectors) {
+            statsForIdentifier.selectors = {}
+          }
 
-        if (!selectorsInJsx[fileEntry].selectors[cssSelector]) {
-          selectorsInJsx[fileEntry].selectors[cssSelector] = 0
+          statsForIdentifier.selectors[cssSelector] =
+            (statsForIdentifier.selectors[cssSelector] || 0) + 1
         }
-
-        selectorsInJsx[fileEntry].selectors[cssSelector] += 1
       }
     })
   }
@@ -138,21 +153,29 @@ export async function parseProject(projectPath: string, options: Config): Promis
   const undefinedSelectors: ParseResult['undefinedSelectors'] = {}
 
   // Count usages
-  for (const [jsxFilePath, stats] of Object.entries(selectorsInJsx)) {
-    if (stats.cssFilePath && stats.selectors && cssFilesUsedByComponents[stats.cssFilePath]) {
-      for (const [selectorName, count] of Object.entries(stats.selectors)) {
-        cssFilesUsedByComponents[stats.cssFilePath].selectors[selectorName] += count
+  for (const [jsxFilePath, jsxStats] of Object.entries(selectorsInJsx)) {
+    for (const stats of Object.values(jsxStats.stats)) {
+      const cssFileStats = cssFilesUsedByComponents[stats.cssFilePath]
 
-        if (options.reverse) {
-          const isUndefinedSelector =
-            !cssFilesUsedByComponents[stats.cssFilePath].selectors[selectorName]
+      if (stats.cssFilePath && stats.selectors && cssFileStats) {
+        for (const [selectorName, count] of Object.entries(stats.selectors)) {
+          const currentSelectorCount = cssFileStats.selectors[selectorName]
 
-          if (isUndefinedSelector) {
-            if (!undefinedSelectors[jsxFilePath]) {
-              undefinedSelectors[jsxFilePath] = { cssFilePath: stats.cssFilePath, selectors: [] }
+          if (currentSelectorCount !== undefined) {
+            cssFileStats.selectors[selectorName] = currentSelectorCount + count
+          }
+
+          if (options.reverse) {
+            const isUndefinedSelector =
+              cssFilesUsedByComponents[stats.cssFilePath]?.selectors[selectorName] === undefined
+
+            if (isUndefinedSelector) {
+              if (!undefinedSelectors[jsxFilePath]) {
+                undefinedSelectors[jsxFilePath] = { cssFilePath: stats.cssFilePath, selectors: [] }
+              }
+
+              undefinedSelectors[jsxFilePath].selectors.push(selectorName)
             }
-
-            undefinedSelectors[jsxFilePath].selectors.push(selectorName)
           }
         }
       }
@@ -167,6 +190,7 @@ export async function parseProject(projectPath: string, options: Config): Promis
 
 type MemberExpressionWithIdentifierProperty = MemberExpression & {
   property: Identifier
+  object: Identifier
 }
 
 function isNodeReferencingStyles(
@@ -177,6 +201,6 @@ function isNodeReferencingStyles(
     node.type === 'MemberExpression' &&
     node.object.type === 'Identifier' &&
     node.property.type === 'Identifier' &&
-    node.object.name === jsxFileStat?.stylesIdentifier
+    jsxFileStat?.stats[node.object.name] !== undefined
   )
 }

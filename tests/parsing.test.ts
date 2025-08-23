@@ -14,7 +14,7 @@ describe('parseProject', () => {
   it('should correctly count selector usages', async () => {
     const { selectorsUsage } = await parseProject(projectPath, options)
     const cssFilePath = path.join(projectPath, 'styles.module.css')
-    const { selectors } = selectorsUsage[cssFilePath]
+    const { selectors } = selectorsUsage[cssFilePath]!
 
     expect(selectors.selectorForKey).toBe(1)
     expect(selectors.randomSelector).toBe(1)
@@ -27,7 +27,7 @@ describe('parseProject', () => {
     const { selectorsUsage } = await parseProject(projectPath, options)
     const cssFilePath = path.join(projectPath, 'styles.module.css')
 
-    const { selectors } = selectorsUsage[cssFilePath]
+    const { selectors } = selectorsUsage[cssFilePath]!
 
     const unusedSelectors = Object.keys(selectors).filter(key => selectors[key] === 0)
 
@@ -52,27 +52,43 @@ describe('parseProject', () => {
 
     const componentPath = path.join(projectPath, 'notExistingSelectors', 'importantComponent.jsx')
 
-    expect(undefinedSelectors[componentPath].selectors).toContain('notExisting')
-    expect(undefinedSelectors[componentPath].selectors).toContain('someText')
+    const selectors = undefinedSelectors[componentPath]!.selectors
+
+    expect(selectors).toContain('notExisting')
+    expect(selectors).toContain('someText')
   })
 
   it('should handle different style file extensions like .scss', async () => {
     const { selectorsUsage } = await parseProject(projectPath, options)
     const scssFilePath = path.join(projectPath, 'scssComponent', 'styles.module.scss')
-    expect(selectorsUsage[scssFilePath].selectors.usedBigAssSelector).toBe(1)
+    expect(selectorsUsage[scssFilePath]!.selectors.usedBigAssSelector).toBe(1)
   })
 
   it('should handle components with different css import identifiers', async () => {
     const { selectorsUsage } = await parseProject(projectPath, options)
     const cssFilePath = path.join(projectPath, 'componentWithDifferentCssName', 'styles.css')
-    expect(selectorsUsage[cssFilePath].selectors.testContainer).toBe(1)
+    expect(selectorsUsage[cssFilePath]!.selectors.testContainer).toBe(1)
   })
 
   it('should correctly parse string template selectors', async () => {
     const { selectorsUsage } = await parseProject(projectPath, options)
     const cssFilePath = path.join(projectPath, 'stringTemplateSelector', 'styles.css')
 
-    expect(selectorsUsage[cssFilePath].selectors.firstClassName).toBe(1)
-    expect(selectorsUsage[cssFilePath].selectors.superUniqueUsedClassname).toBe(1)
+    const selectors = selectorsUsage[cssFilePath]!.selectors
+
+    expect(selectors.firstClassName).toBe(1)
+    expect(selectors.superUniqueUsedClassname).toBe(1)
+  })
+
+  it('should correctly work with multiple css files in single JSX file', async () => {
+    const { selectorsUsage } = await parseProject(projectPath, options)
+    const cssFilePath1 = path.join(projectPath, 'multipleStylesInOneFile', 'container.css')
+    const cssFilePath2 = path.join(projectPath, 'multipleStylesInOneFile', 'text.css')
+
+    expect(selectorsUsage[cssFilePath1]!.selectors.container).toBe(1)
+    expect(selectorsUsage[cssFilePath1]!.selectors.unusedContainerStylesSelector).toBe(0)
+
+    expect(selectorsUsage[cssFilePath2]!.selectors.text).toBe(1)
+    expect(selectorsUsage[cssFilePath2]!.selectors.unusedTextStylesSelector).toBe(0)
   })
 })

@@ -1,0 +1,9 @@
+.text {
+  font-size: xx-large;
+  font-weight: lighter;
+  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}
+
+.unusedTextStylesSelector {
+  text-decoration: underline;
+}

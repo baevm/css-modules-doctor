@@ -22,7 +22,7 @@ export default [
       ecmaVersion: 'latest',
       sourceType: 'module',
       parserOptions: {
-        project: ['./tsconfig.json'],
+        project: ['./tsconfig.eslint.json'],
       },
     },
 
@@ -128,6 +128,13 @@ export default [
       '@typescript-eslint/no-misused-spread': 'warn',
       '@typescript-eslint/prefer-for-of': 'warn',
       '@typescript-eslint/no-unnecessary-condition': 'warn',
+      '@typescript-eslint/consistent-indexed-object-style': 'off',
+    },
+  },
+  {
+    files: ['./tests/**/*'],
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'off',
     },
   },
 ]
