@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 
-import { parseProject } from './parsing.ts'
+import { parseProject } from './parsing/project.ts'
 import { Command } from 'commander'
 import type { Config } from './types.ts'
 import { formatUndefinedSelectors, formatUnusedSelectors, getAllUnusedSelectors } from './format.ts'

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import path from 'node:path'
-import { parseProject } from '../src/parsing.ts'
+import { parseProject } from '../src/parsing/project.ts'
 import type { Config } from '../src/types.ts'
 
 describe('parseProject', () => {

@@ -1,4 +1,4 @@
-import type { CssFileStats, ParseResult } from './parsing.ts'
+import type { CssFileStats, ParseResult } from './parsing/project.ts'
 import Table from 'cli-table3'
 
 type UnusedSelectors = Map<string, string[]>
