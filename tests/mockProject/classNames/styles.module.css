@@ -1,0 +1,15 @@
+.stage {
+  color: red;
+}
+
+.disabledStage {
+  opacity: 0.5;
+}
+
+.anotherClass {
+  font-weight: 600;
+}
+
+.unusedClassNamesSelector {
+  text-transform: uppercase;
+}

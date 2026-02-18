@@ -4,7 +4,7 @@ import fastglob from 'fast-glob'
 import { parseAndWalk } from 'oxc-walker'
 
 import type { Identifier } from 'oxc-walker'
-import type { Node as AstNode, MemberExpression } from 'oxc-parser'
+import type { Node as AstNode, MemberExpression, StringLiteral } from 'oxc-parser'
 import type { Config } from '../types.ts'
 import { parseCssFileSelectors } from './css.ts'
 
@@ -105,10 +105,12 @@ export async function parseProject(projectPath: string, options: Config): Promis
         }
       }
 
+      const isNeededNode = isNodeReferencingStyles(node, selectorsInJsx[fileEntry])
+
       // Count selectors used in JSX
-      if (isNodeReferencingStyles(node, selectorsInJsx[fileEntry])) {
+      if (isNeededNode) {
         const stylesIdentifier = node.object.name
-        const cssSelector = node.property.name
+        const cssSelector = getSelectorFromStylesProperty(node.property)
 
         const statsForIdentifier = selectorsInJsx[fileEntry]?.stats[stylesIdentifier]
 
@@ -162,19 +164,25 @@ export async function parseProject(projectPath: string, options: Config): Promis
   }
 }
 
-type MemberExpressionWithIdentifierProperty = MemberExpression & {
-  property: Identifier
+type StylesProperty = Identifier | StringLiteral
+
+type StylesMemberExpression = MemberExpression & {
   object: Identifier
+  property: StylesProperty
 }
 
 function isNodeReferencingStyles(
   node: AstNode,
   jsxFileStat: JsxFileStats | undefined,
-): node is MemberExpressionWithIdentifierProperty {
+): node is StylesMemberExpression {
   return (
     node.type === 'MemberExpression' &&
     node.object.type === 'Identifier' &&
-    node.property.type === 'Identifier' &&
+    (node.property.type === 'Identifier' || node.property.type === 'Literal') &&
     jsxFileStat?.stats[node.object.name] !== undefined
   )
+}
+
+function getSelectorFromStylesProperty(property: StylesProperty): string {
+  return property.type === 'Identifier' ? property.name : property.value
 }

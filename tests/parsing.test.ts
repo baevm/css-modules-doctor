@@ -109,4 +109,31 @@ describe('parseProject', () => {
 
     consoleErrorSpy.mockRestore()
   })
+
+  describe('classNames package edge cases', () => {
+    it('should correctly work classNames library selectors handling', async () => {
+      const { selectorsUsage } = await parseProject(projectPath, options)
+      const cssFilePath1 = path.join(projectPath, 'classNames', 'styles.module.css')
+
+      const selectors = selectorsUsage[cssFilePath1]!.selectors
+
+      expect(selectors.stage).toBe(1)
+      expect(selectors.disabledStage).toBe(1)
+      expect(selectors.anotherClass).toBe(1)
+      expect(selectors.unusedClassNamesSelector).toBe(0)
+    })
+
+    it('should find undefined classNames selectors in reverse mode', async () => {
+      const { undefinedSelectors } = await parseProject(projectPath, {
+        ...options,
+        reverse: true,
+      })
+
+      const componentPath = path.join(projectPath, 'classNames', 'classNames.jsx')
+      const selectors = undefinedSelectors[componentPath]!.selectors
+
+      expect(selectors).toContain('missingClassName')
+      expect(selectors).toContain('missingStringLiteralClass')
+    })
+  })
 })
