@@ -3,7 +3,7 @@
 import { parseProject } from './parsing/project.ts'
 import { Command } from 'commander'
 import type { Config } from './types.ts'
-import { formatUndefinedSelectors, formatUnusedSelectors, getAllUnusedSelectors } from './format.ts'
+import { buildReportOutput, writeReportOutput } from './output.ts'
 
 const program = new Command()
 
@@ -26,6 +26,11 @@ program
     '-r, --reverse',
     'Reverse mode - find selectors used in components but not existing in CSS file. Default: false',
   )
+  .option('-o, --output <path>', 'Output file path. Prints to console when omitted')
+  .option(
+    '--outputFormat <format>',
+    'Output format: cli | json | md. Defaults to cli or inferred from output extension (.json/.md)',
+  )
   .action(async (dir: string, options: Config) => {
     await run(dir, options)
   })
@@ -33,19 +38,7 @@ program
 program.parse()
 
 async function run(pathToProject: string, options: Config) {
-  const { selectorsUsage, undefinedSelectors } = await parseProject(pathToProject, options)
-
-  const unusedSelectors = getAllUnusedSelectors(selectorsUsage)
-
-  const { table, stats } = formatUnusedSelectors(unusedSelectors)
-
-  console.log(table.toString())
-
-  if (options.reverse) {
-    const { table, stats } = formatUndefinedSelectors(undefinedSelectors)
-    console.log(table.toString())
-    console.log(`Total undefined selectors: ${stats.totalUndefinedSelectors}`)
-  }
-
-  console.log(`Total unused selectors: ${stats.totalUnusedSelectors}`)
+  const parseResult = await parseProject(pathToProject, options)
+  const reportOutput = buildReportOutput(parseResult, options)
+  await writeReportOutput(reportOutput, options.output)
 }
