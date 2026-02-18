@@ -110,6 +110,18 @@ describe('parseProject', () => {
     consoleErrorSpy.mockRestore()
   })
 
+  it('should ignore css files when ignored path points to a directory', async () => {
+    const ignoredDirectory = path.join(projectPath, 'classNames')
+
+    const { selectorsUsage } = await parseProject(projectPath, {
+      ...options,
+      ignore: [ignoredDirectory],
+    })
+
+    const cssFilePath = path.join(projectPath, 'classNames', 'styles.module.css')
+    expect(selectorsUsage[cssFilePath]).toBeUndefined()
+  })
+
   describe('classNames package edge cases', () => {
     it('should correctly work classNames library selectors handling', async () => {
       const { selectorsUsage } = await parseProject(projectPath, options)

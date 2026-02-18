@@ -148,9 +148,36 @@ export class ProjectParser {
     }
   }
 
-  // Skip CSS files from ignore array
+  // Checks if CSS file is ignored by directory or specific CSS file path
   private isCssFileIgnored(cssFullPath: string) {
-    return this.options.ignore?.some(ignoreOpt => cssFullPath.endsWith(ignoreOpt))
+    if (!this.options.ignore?.length) {
+      return false
+    }
+
+    const normalizedCssPath = path.normalize(path.resolve(cssFullPath))
+
+    return this.options.ignore.some(ignoreOpt => {
+      const ignorePathVariants = this.resolveIgnorePathVariants(ignoreOpt)
+
+      return ignorePathVariants.some(ignorePath =>
+        this.isSamePathOrSubdirectory(normalizedCssPath, ignorePath),
+      )
+    })
+  }
+
+  private resolveIgnorePathVariants(ignorePath: string): string[] {
+    const cwdResolvedPath = path.normalize(path.resolve(ignorePath))
+
+    if (path.isAbsolute(ignorePath)) {
+      return [cwdResolvedPath]
+    }
+
+    const projectResolvedPath = path.normalize(path.resolve(this.projectPath, ignorePath))
+    return [cwdResolvedPath, projectResolvedPath]
+  }
+
+  private isSamePathOrSubdirectory(filePath: string, ignoredPath: string) {
+    return filePath === ignoredPath || filePath.startsWith(ignoredPath + path.sep)
   }
 
   private isCssPath(importPath: string) {
