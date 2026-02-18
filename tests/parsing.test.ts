@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import path from 'node:path'
 import { parseProject } from '../src/parsing.ts'
 import type { Config } from '../src/types.ts'
@@ -90,5 +90,23 @@ describe('parseProject', () => {
 
     expect(selectorsUsage[cssFilePath2]!.selectors.text).toBe(1)
     expect(selectorsUsage[cssFilePath2]!.selectors.unusedTextStylesSelector).toBe(0)
+  })
+
+  it('should handle invalid css files gracefully and log an error', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const { selectorsUsage } = await parseProject(projectPath, options)
+    const cssFilePath = path.join(projectPath, 'invalidCss', 'styles.module.css')
+
+    // Invalid CSS file should be treated as having no selectors
+    expect(selectorsUsage[cssFilePath]!.selectors).toEqual({})
+
+    // An error should have been logged
+    expect(consoleErrorSpy).toHaveBeenCalledOnce()
+    const errorOutput = consoleErrorSpy.mock.calls[0]![0] as string
+    expect(errorOutput).toContain('CSS Parse Error')
+    expect(errorOutput).toContain(cssFilePath)
+
+    consoleErrorSpy.mockRestore()
   })
 })

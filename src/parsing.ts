@@ -4,34 +4,63 @@ import fs from 'node:fs'
 import path from 'node:path'
 import fastglob from 'fast-glob'
 import { parseAndWalk } from 'oxc-walker'
+import util from 'node:util'
 
 import type { Identifier } from 'oxc-walker'
 import type { Node as AstNode, MemberExpression } from 'oxc-parser'
 import type { Config } from './types.ts'
 
+type TransformError<T> = {
+  message: string
+  loc?: {
+    line: number
+    column: number
+  }
+  source?: string
+  data: T
+}
+
+/**
+ * Parses all selectors from css file
+ * @returns string[] - array of selectors
+ */
 function parseCssFileSelectors(cssPath: string) {
   // todo: add handling for css files imported from node_modules
   if (!fs.existsSync(cssPath)) return []
 
   const fileData = fs.readFileSync(cssPath)
 
-  const { exports } = transform({
-    filename: cssPath,
-    code: fileData,
-    cssModules: true,
-    sourceMap: true,
-    visitor: {
-      // Skip keyframe names, container names, etc.
-      CustomIdent() {
-        return ''
+  try {
+    const { exports } = transform({
+      filename: cssPath,
+      code: fileData,
+      cssModules: true,
+      sourceMap: true,
+      visitor: {
+        // Skip keyframe names, container names, etc.
+        CustomIdent() {
+          return ''
+        },
       },
-    },
-  })
+    })
 
-  // since we skip keyframes/containers etc. some selectors will be empty string
-  const selectorNames = exports ? Object.keys(exports).filter(Boolean) : []
+    // since we skip keyframes/containers etc. some selectors will be empty string
+    const selectorNames = exports ? Object.keys(exports).filter(Boolean) : []
 
-  return selectorNames
+    return selectorNames
+  } catch (error: unknown) {
+    const err = error as TransformError<unknown>
+
+    const filename = util.styleText('cyan', cssPath)
+    const label = util.styleText(['bold', 'red'], 'CSS Parse Error')
+    const reason = util.styleText('yellow', err.message ?? 'Unknown error')
+    const loc = err.loc
+      ? util.styleText('dim', ` (line ${err.loc.line}, col ${err.loc.column})`)
+      : ''
+
+    console.error(`${label} in ${filename}${loc}:  ${reason}`)
+    return []
+  }
 }
 
 export type CssFileStats = {

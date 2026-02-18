@@ -5,5 +5,5 @@
         "dist",
         "tests/mockProject/**/*"
   ],
-  "include": ["./tests/**/*.test.ts"]
+  "include": ["./src", "eslint.config.mjs", "./tests/**/*.test.ts"]
 }
